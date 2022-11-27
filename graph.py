@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def print_help(msg = None, code = 0):
-    if not msg is None:
+    if msg is not None:
         print(msg)
     print("""usage:
           --dir <directory where to find all csvs> REQUIRED
@@ -16,14 +16,15 @@ def print_help(msg = None, code = 0):
     exit(code)
 
 def parse_args():
+    return "/tmp/allrepos"
     dir = None
 
     a = argv[1:]
     while len(a) != 0:
         first = a[0]
         if "=" in first:
-            l = first.split("=")
-            a = l + a[1:]
+            both = first.split("=")
+            a = both + a[1:]
             continue
 
         if first in ["--help", "-h"]:
@@ -60,9 +61,9 @@ def get_rows(df):
 """
 makes all informations inside a linecount-csv relative to it's previous position
 """
-def diff_csv_info(df):
+def diff_csv_info(df: pd.DataFrame):
     # sort by unixtimestamp of commit date
-    df.sort_values("unix")
+    df.sort_values("unix", inplace=True)
 
     rows = list(get_rows(df))
     if len(rows) == 0:
@@ -114,7 +115,7 @@ def concat(frames):
     return pd.DataFrame.from_dict(b)
 
 df = concat(dataframes)
-df.sort_values("unix")
+df.sort_values("unix", inplace=True)
 
 
 # now, undo diffing
@@ -141,7 +142,7 @@ def undiff(df):
                 b[k].append(acc[k])
 
     newdf = pd.DataFrame.from_dict(b)
-    newdf.sort_values("unix")
+    newdf.sort_values("unix", inplace=True)
     return newdf
 
 df = undiff(df)

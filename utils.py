@@ -17,7 +17,9 @@ def to_datetime(cdate):
     # sample input: '2022-11-27 13:06:22 +0100'
 
     day, time = cdate.split(" ")[0:2]
-    ints = lambda n: list(map(int, n))
+    def ints(n):
+        return list(map(int, n))
+
     y,m,d = ints(day.split("-"))
     h,min,sec = ints(time.split(":"))
 
@@ -67,8 +69,12 @@ def repo_info(user):
         else:
             break
 
-def all_repo_names(user):
+def all_repo_names(user, keep = set()):
     for repo in repo_info(user):
+        if repo['fork'] and repo['name'] not in keep:
+            print('skipping ' + repo['name'])
+            continue
+
         yield repo['full_name']
 
 filetypes = [
