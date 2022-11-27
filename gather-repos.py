@@ -21,7 +21,7 @@ def parse_args() -> tuple[str, str, list[str]]:
     user = None
     repos = []
 
-    a = argv
+    a = argv[1:]
     while len(a) != 0:
         first = a[0]
         if "=" in first:
