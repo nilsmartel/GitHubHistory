@@ -174,7 +174,7 @@ def crunch_repo(repo: str):
         csvline = ";".join(map(str, line))
         lines.append(csvline)
 
-    csvcontent += "\n".join(lines) + "\n"
+    csvcontent += "\n" + "\n".join(lines) + "\n"
 
     f = open(csvfilename, "w")
     f.write(csvcontent)

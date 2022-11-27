@@ -53,6 +53,10 @@ def get_csv_paths():
         if f.endswith(".csv"):
             yield dir + "/" + f
 
+def get_rows(df):
+    for _,row in df.iterrows():
+        yield row
+
 """
 makes all informations inside a linecount-csv relative to it's previous position
 """
@@ -60,7 +64,10 @@ def diff_csv_info(df):
     # sort by unixtimestamp of commit date
     df.sort_values("unix")
 
-    rows = list(df.iterrows())
+    rows = list(get_rows(df))
+    if len(rows) == 0:
+        return df
+
     keys = df.keys()
     ndf = dict()
     for k in keys:
@@ -68,8 +75,8 @@ def diff_csv_info(df):
         ndf[k] = [v]
 
     for i in range(1,(len(rows))):
-        _,prev = rows[i-1]
-        _,row = rows[i]
+        prev = rows[i-1]
+        row = rows[i]
 
         for k in df.keys():
             v = row[k]
@@ -82,15 +89,14 @@ def diff_csv_info(df):
 
     return pd.DataFrame.from_dict(ndf)
 
+def read(path):
+    return pd.read_csv(path, sep=";")
 
 # create thread pool for
 # downloading and organizing repositories.
 pool = Pool(32)
 
-dataframes = pool.map(diff_csv_info,
-    pool.map(lambda path: pd.read_csv(path, sep=";"),
-                          get_csv_paths())
-                      )
+dataframes = pool.map(diff_csv_info, pool.map(read, get_csv_paths()))
 
 # next merge all dataframes into one by concatenation
 
@@ -101,8 +107,9 @@ def concat(frames):
         b[k] = []
 
     for f in frames:
-        for k in keys:
-            b[k].append(f[f])
+        for row in get_rows(f):
+            for k in keys:
+                b[k].append(row[k])
 
     return pd.DataFrame.from_dict(b)
 
@@ -122,9 +129,9 @@ def undiff(df):
         if k not in ["repo", "commit", "date", "unix"]:
             acc[k] = 0
 
-    rows = df.iterrows()
+    rows = get_rows(df)
 
-    for _,row in rows:
+    for row in rows:
         for k in keys:
             if k not in acc:
                 b[k].append(row[k])
