@@ -125,11 +125,12 @@ def crunch_repo(repo: str):
     reponame = repo.rsplit("/", maxsplit=1)[-1]
     url = "https://github.com/" + repo
     if os.path.exists(reponame):
-        utils.exec(["git", "clone", url, reponame])
-        os.chdir(reponame)
-    else:
         os.chdir(reponame)
         utils.exec(["git", "pull"])
+    else:
+        utils.exec(["git", "clone", url, reponame])
+        os.chdir(reponame)
+
 
     csvfilename = f"../{reponame}.csv"
     csvcontent = csvheader
@@ -170,7 +171,8 @@ def crunch_repo(repo: str):
     print("completed " + repo)
     return
 
-os.mkdir(dir)
+if not os.path.exists(dir):
+    os.mkdir(dir)
 
 # create thread pool for
 # downloading and organizing repositories.
