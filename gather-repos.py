@@ -126,7 +126,10 @@ def crunch_repo(repo: str):
     url = "https://github.com/" + repo
     if os.path.exists(reponame):
         os.chdir(reponame)
-        utils.exec(["git", "pull"])
+        try:
+            utils.exec(["git", "pull"])
+        except:
+            print(">>>> error pulling repo " + repo)
     else:
         utils.exec(["git", "clone", url, reponame])
         os.chdir(reponame)
@@ -136,13 +139,19 @@ def crunch_repo(repo: str):
     csvcontent = csvheader
     lines = []
 
-    commits = list(utils.all_commits())
+    commits = []
+    try:
+        commits = list(utils.all_commits())
+    except:
+        print(">>>> error on repo " + repo)
+
+
     for commit in commits:
         date = utils.commit_date(commit)
         unix = utils.to_unixtime(utils.to_datetime(date))
         line = [reponame, commit, date, unix]
         info = dict()
-        for ext, ft in filetypes:
+        for _, ft in filetypes:
             info[ft] = 0
 
         # check out commit
@@ -156,8 +165,8 @@ def crunch_repo(repo: str):
                 ft = ftdict[s]
                 info[ft] += linecount(file)
 
-        for ext, _ in filetypes:
-            line.append(info[ext])
+        for _, ft in filetypes:
+            line.append(info[ft])
 
         csvline = ";".join(map(str, line))
         lines.append(csvline)
