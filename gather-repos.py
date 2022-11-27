@@ -163,7 +163,10 @@ def crunch_repo(repo: str):
                 if not s in ftdict:
                     continue
                 ft = ftdict[s]
-                info[ft] += linecount(file)
+                try:
+                    info[ft] += linecount(file)
+                except:
+                    print(f"[{reponame}] ignoring file {file}")
 
         for _, ft in filetypes:
             line.append(info[ft])
