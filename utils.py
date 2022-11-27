@@ -1,4 +1,6 @@
 import requests
+import datetime
+import time
 from subprocess import check_output
 
 def exec(args):
@@ -9,7 +11,20 @@ get date of a specific commit.
 current working directory must be inside the git repository
 """
 def commit_date(commit):
-    return exec(["git", "show", "-s", "--format=%ci", commit])
+    return exec(["git", "show", "-s", "--format=%ci", commit]).replace("\n", "")
+
+def to_datetime(cdate):
+    # sample input: '2022-11-27 13:06:22 +0100'
+
+    day, time = cdate.split(" ")[0:2]
+    ints = lambda n: list(map(int, n))
+    y,m,d = ints(day.split("-"))
+    h,min,sec = ints(time.split(":"))
+
+    return datetime.datetime(y,m,d,h,min,sec)
+
+def to_unixtime(dtime):
+    return int(time.mktime(dtime.timetuple()))
 
 """
 get all commits from the git repo (and branch)
@@ -55,4 +70,46 @@ def repo_info(user):
 def all_repo_names(user):
     for repo in repo_info(user):
         yield repo['full_name']
+
+filetypes = [
+    ("md", "Markdown"),
+    ("go", "go"),
+    ("rs", "rust"),
+    ("swift", "swift"),
+    ("hs", "haskell"),
+    ("elm", "elm"),
+    ("js", "javascript"),
+    ("css", "css"),
+    ("html", "html"),
+    ("ts", "typescript"),
+    ("tsx", "react (typescript)"),
+    ("jsx", "react (javascript)"),
+    ("c", "c"),
+    ("h", "header"),
+    ("cpp", "c++"),
+    ("c++", "c++"),
+    ("cxx", "c++"),
+    ("toml", "toml"),
+    ("yaml", "yaml"),
+    ("json", "json"),
+    ("zsh", "shell"),
+    ("sh", "shell"),
+    ("fish", "shell"),
+    ("cr", "crystal"),
+    ("sol", "solar"),
+    ("java", "java"),
+    ("kt", "kotlin"),
+    ("clj", "clojure"),
+    ("lisp", "lisp"),
+    ("cs", "c#"),
+    ("py", "python"),
+    ("vim", "vim"),
+    ("alloy", "alloy"),
+    ("dart", "dart"),
+    ("csv", "csv"),
+    ("glsl", "glsl"),
+    ("wgsl", "wgsl"),
+    ("jl", "julia"),
+    ("zig", "zig"),
+        ]
 

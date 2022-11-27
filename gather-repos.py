@@ -88,6 +88,7 @@ filetypes = [
     ("vim", "vim"),
     ("alloy", "alloy"),
     ("dart", "dart"),
+    ("csv", "csv"),
     ("glsl", "glsl"),
     ("wgsl", "wgsl"),
     ("jl", "julia"),
@@ -96,7 +97,7 @@ filetypes = [
 
 ftdict = dict()
 
-csvheader = "repo;commit;date"
+csvheader = "repo;commit;date;unix"
 for ext,name in filetypes:
     csvheader += ";" + name
     ftdict[ext] = name
@@ -123,8 +124,13 @@ def crunch_repo(repo: str):
     os.chdir(dir)
     reponame = repo.rsplit("/", maxsplit=1)[-1]
     url = "https://github.com/" + repo
-    utils.exec(["git", "clone", url, reponame])
-    os.chdir(reponame)
+    if os.path.exists(reponame):
+        utils.exec(["git", "clone", url, reponame])
+        os.chdir(reponame)
+    else:
+        os.chdir(reponame)
+        utils.exec(["git", "pull"])
+
     csvfilename = f"../{reponame}.csv"
     csvcontent = csvheader
     lines = []
@@ -132,10 +138,11 @@ def crunch_repo(repo: str):
     commits = list(utils.all_commits())
     for commit in commits:
         date = utils.commit_date(commit)
-        line = [reponame, commit, date]
+        unix = utils.to_unixtime(utils.to_datetime(date))
+        line = [reponame, commit, date, unix]
         info = dict()
-        for ext, _ in filetypes:
-            info[ext] = 0
+        for ext, ft in filetypes:
+            info[ft] = 0
 
         # check out commit
         utils.exec(["git", "checkout", commit])
@@ -145,15 +152,16 @@ def crunch_repo(repo: str):
                 file = root + "/" + file
                 if not s in ftdict:
                     continue
-
-                info[s] += linecount(file)
+                ft = ftdict[s]
+                info[ft] += linecount(file)
 
         for ext, _ in filetypes:
             line.append(info[ext])
 
-        lines.append(line)
+        csvline = ";".join(map(str, line))
+        lines.append(csvline)
 
-    csvcontent += "\n".join(lines)
+    csvcontent += "\n".join(lines) + "\n"
 
     f = open(csvfilename, "w")
     f.write(csvcontent)
