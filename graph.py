@@ -167,7 +167,7 @@ print(f"[graph.py] found {d.size} commits")
 
 print("[graph.py] configure graph")
 
-fig, ax = plt.subplots(figsize=(15, 15))
+fig, ax = plt.subplots(figsize=(15, 8))
 
 def fmt(date):
     return date.split(" ")[0]
@@ -204,7 +204,7 @@ for _, kind in utils.filetypes:
 x = d['unix']
 ax.stackplot(x, y, labels=labels, colors=colors)
 # ax.stackplot(x, y, labels=labels)
-ax.legend()
+ax.legend(loc='upper left')
 ax.set_ylabel('lines of code')
 ax.set_xlabel('time')
 
@@ -227,3 +227,83 @@ fig.tight_layout()
 print("[graph.py] saving graph as " + filename)
 
 fig.savefig(filename)
+
+# improve png by making white parts transparent
+
+import PIL
+from PIL import Image
+
+img = Image.open(filename)
+im = img.load()
+size = img.size
+
+
+def clip(x, y, w, h):
+    if x < 0:
+        w -= x
+        x = 0
+    if y < 0:
+        h -= y
+        y = 0
+
+    if w >= size[0]:
+        w = size[0] - 1
+
+    if h >= size[1]:
+        h = size[1] - 1
+
+    return x, y, w, h
+
+def allwhite(x, y, w, h):
+    for x1 in range(x, w):
+        # for y1 in range(y, h):
+            p = im[x1, y]
+            if p != (255, 255, 255, 255):
+                return False
+
+    return True
+
+data = bytearray()
+td = []
+ks =  6
+half = int(ks / 2)
+
+for y in range(0, size[1]):
+    for x in range(0, size[0]):
+        # x, y, w, h = clip(x-half, y, x + half, y+half)
+
+        p = im[x, y]
+
+        all = True
+        for x1 in range(x-half, x+half):
+            for y1 in range(y-half, y+half):
+                try:
+                    n = im[x1, y1]
+                    if n != (255, 255, 255, 255):
+                        all = False
+                        break
+                except:
+                    pass
+
+        for p1 in p:
+            data.append(p1)
+
+        if all:
+            data.pop()
+            data.append(0)
+
+
+img = Image.frombuffer('RGBA', size, data)
+
+f = 't-' + filename
+
+if '/' in filename:
+    x  = filename.split("/")
+    last = x.pop()
+    x.append("t-" + last)
+    f = "/".join(x)
+
+print("[graph.py] saving transparent image as " + f)
+
+
+img.save(f)
