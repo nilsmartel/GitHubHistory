@@ -295,13 +295,14 @@ for y in range(0, size[1]):
 
 img = Image.frombuffer('RGBA', size, data)
 
-f = 't-' + filename
+f = filename
+# f = 't-' + filename
 
-if '/' in filename:
-    x  = filename.split("/")
-    last = x.pop()
-    x.append("t-" + last)
-    f = "/".join(x)
+# if '/' in filename:
+#     x  = filename.split("/")
+#     last = x.pop()
+#     x.append("t-" + last)
+#     f = "/".join(x)
 
 print("[graph.py] saving transparent image as " + f)
 
