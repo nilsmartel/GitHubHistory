@@ -102,6 +102,8 @@ def diff_csv_info(df: pd.DataFrame):
 def read(path):
     return pd.read_csv(path, sep=";")
 
+print("[graph.py] reading and diffing commit information")
+
 # create thread pool for
 # downloading and organizing repositories.
 pool = Pool(32)
@@ -122,6 +124,8 @@ def concat(frames):
                 b[k].append(row[k])
 
     return pd.DataFrame.from_dict(b)
+
+print("[graph.py] merging commit information")
 
 df = concat(dataframes)
 df.sort_values("unix", inplace=True)
@@ -156,7 +160,12 @@ def undiff(df):
 
 d = undiff(df)
 
+print(f"[graph.py] found {d.size} commits")
+
+
 # now plot the graph
+
+print("[graph.py] configure graph")
 
 fig, ax = plt.subplots(figsize=(15, 15))
 
@@ -171,10 +180,16 @@ labels = []
 discard = config.languages_to_ignore()
 keep = config.languages_to_keep()
 
+if keep is None or len(keep) == 0:
+    # set keep to all filetypes
+    keep = set(map(lambda x: x[1], utils.filetypes))
+
 for _, kind in utils.filetypes:
     if kind in discard:
+        print(f"[graph.py] ignoring   {kind}")
         continue
-    if keep is not None and kind not in keep:
+    if kind not in keep:
+        print(f"[graph.py] discarding {kind}")
         continue
 
     values = d[kind]
@@ -207,4 +222,8 @@ s = 300
 _ = ax.set_xticks(skipl(x, s), skipl(xlabels, s), rotation=45)
 
 fig.tight_layout()
+
+
+print("[graph.py] saving graph as " + filename)
+
 fig.savefig(filename)
