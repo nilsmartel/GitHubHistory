@@ -4,6 +4,8 @@ import utils
 from sys import argv
 import os
 import pandas as pd
+import config
+import matplotlib.pyplot as plt
 
 
 def print_help(msg = None, code = 0):
@@ -11,13 +13,14 @@ def print_help(msg = None, code = 0):
         print(msg)
     print("""usage:
           --dir <directory where to find all csvs> REQUIRED
+          --graph <filename to save graph as> REQUIRED
           """)
 
     exit(code)
 
 def parse_args():
-    return "/tmp/allrepos"
     dir = None
+    graph = None
 
     a = argv[1:]
     while len(a) != 0:
@@ -32,17 +35,23 @@ def parse_args():
 
         elif first in ["--dir", "-d"]:
             dir = a[1]
+        elif first in ["--graph", "-g"]:
+            graph = a[1]
         else:
             print_help(f"unknown command '{first}'", code=1)
 
         a = a[2:]
 
-    if None in [dir]:
+    if None in [dir, graph]:
         print_help("required arguments missing", code=1)
 
-    return str(dir)
+    graph = str(graph)
+    if not graph.endswith(".png"):
+        graph += ".png"
 
-dir = parse_args()
+    return str(dir), graph
+
+dir, filename = parse_args()
 
 ftdict = dict()
 
@@ -145,4 +154,57 @@ def undiff(df):
     newdf.sort_values("unix", inplace=True)
     return newdf
 
-df = undiff(df)
+d = undiff(df)
+
+# now plot the graph
+
+fig, ax = plt.subplots(figsize=(15, 15))
+
+def fmt(date):
+    return date.split(" ")[0]
+
+colors=[]
+xlabels = list(map(fmt, d['date']))
+y = []
+labels = []
+
+discard = config.languages_to_ignore()
+keep = config.languages_to_keep()
+
+for _, kind in utils.filetypes:
+    if kind in discard:
+        continue
+    if keep is not None and kind not in keep:
+        continue
+
+    values = d[kind]
+    if len(values) == 0:
+        continue
+
+    labels.append(kind)
+    y.append(values)
+    c = utils.langcolors[kind] if kind in utils.langcolors else None
+    colors.append(c)
+
+x = d['unix']
+ax.stackplot(x, y, labels=labels, colors=colors)
+# ax.stackplot(x, y, labels=labels)
+ax.legend()
+ax.set_ylabel('lines of code')
+ax.set_xlabel('time')
+
+def skip(ls, n):
+    i = 0
+    for elem in ls:
+        if i%n == 0:
+            yield elem
+        i+=1
+
+def skipl(ls, n):
+    return list(skip(ls, n))
+
+s = 300
+_ = ax.set_xticks(skipl(x, s), skipl(xlabels, s), rotation=45)
+
+fig.tight_layout()
+fig.savefig(filename)

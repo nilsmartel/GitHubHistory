@@ -3,40 +3,51 @@ import datetime
 import time
 from subprocess import check_output
 
+
 def exec(args):
     return check_output(args).decode("utf-8")
+
 
 """
 get date of a specific commit.
 current working directory must be inside the git repository
 """
+
+
 def commit_date(commit):
     return exec(["git", "show", "-s", "--format=%ci", commit]).replace("\n", "")
+
 
 def to_datetime(cdate):
     # sample input: '2022-11-27 13:06:22 +0100'
 
     day, time = cdate.split(" ")[0:2]
+
     def ints(n):
         return list(map(int, n))
 
-    y,m,d = ints(day.split("-"))
-    h,min,sec = ints(time.split(":"))
+    y, m, d = ints(day.split("-"))
+    h, min, sec = ints(time.split(":"))
 
-    return datetime.datetime(y,m,d,h,min,sec)
+    return datetime.datetime(y, m, d, h, min, sec)
+
 
 def to_unixtime(dtime):
     return int(time.mktime(dtime.timetuple()))
+
 
 """
 get all commits from the git repo (and branch)
 in the current directory.
 """
+
+
 def all_commits():
     for line in exec(["git", "log"]).splitlines():
         if line.startswith("commit"):
             # cut "commit "
             yield line[7:]
+
 
 def page_info(resp):
     relations = dict()
@@ -55,6 +66,7 @@ def page_info(resp):
 
     return relations
 
+
 def repo_info(user):
     url = f"https://api.github.com/users/{user}/repos"
     while True:
@@ -69,13 +81,15 @@ def repo_info(user):
         else:
             break
 
-def all_repo_names(user, keep = set()):
+
+def all_repo_names(user, keep=set()):
     for repo in repo_info(user):
         if repo['fork'] and repo['name'] not in keep:
             print('skipping ' + repo['name'])
             continue
 
         yield repo['full_name']
+
 
 filetypes = [
     ("md", "Markdown"),
@@ -117,5 +131,22 @@ filetypes = [
     ("wgsl", "wgsl"),
     ("jl", "julia"),
     ("zig", "zig"),
-        ]
+]
 
+
+langcolors = {
+    'rust': '#f54a00',
+    'python': '#ffdc52',
+    'go': '#76e1fe',
+    'haskell': '#5e5086',
+    'crystal': '#e0b9ff',
+    'solar': '#ffa300',
+    'java': '#ffbfc4',
+    'kotlin': '#7f52ff',
+    'clojure': '#91dc47',
+    'lisp': '#3262b4',
+    'alloy': '#d94533',
+    'dart': '#2cb7f6',
+    'wgsl': '#f62cc7',
+    'julia': '#9558b2'
+}
